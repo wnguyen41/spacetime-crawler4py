@@ -1,5 +1,6 @@
 import re
 from urllib.parse import urlparse
+from bs4 import BeautifulSoup
 
 ''' Report Questions
 
@@ -34,6 +35,10 @@ def extract_next_links(url, resp):
     #TODO: parse resp.raw_response (could use beautifulsoup)
         #Extract all urls
         #This also might be the area to get all the info for our report
+    if resp.status == 200:
+        soup = BeautifulSoup(resp.raw_response,'html.parser')
+        for link in soup.find_all('a'):
+            print(link.get('href'))
     return list()
 
 def is_valid(url):
