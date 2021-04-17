@@ -36,7 +36,7 @@ def extract_next_links(url, resp):
         #Extract all urls
         #This also might be the area to get all the info for our report
     if resp.status == 200:
-        soup = BeautifulSoup(resp.raw_response,'html.parser')
+        soup = BeautifulSoup(resp.raw_response.content,'html.parser')
         for link in soup.find_all('a'):
             print(link.get('href'))
     return list()
