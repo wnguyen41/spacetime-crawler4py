@@ -23,8 +23,15 @@ from bs4 import BeautifulSoup
 
 '''
 
+#TODO: change into a set, and change method if inserting
 #list of explored pages
 explored_urls = list()
+
+#TODO: for question (1) add set for all unique urls found (use .split('#')[0] it remove fragment part)
+
+#TODO: add dictionary of words scrapped from sites
+
+#TODO: add dictionary to keep track of ics.uci.edu subdomains
 
 def scraper(url, resp):
     print("Initializing scapper.")
