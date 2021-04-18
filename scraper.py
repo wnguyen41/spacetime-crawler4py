@@ -23,38 +23,59 @@ from bs4 import BeautifulSoup
 
 '''
 
-def scraper(url, resp):
-    links = extract_next_links(url, resp)
-    return [link for link in links if is_valid(link)]
+#
 
-def extract_next_links(url, resp):
-    # Implementation requred.
-    #TODO: Check resp.status codes
-        #If resp.status is between [200-599] response is in resp.raw_response
-        #If resp.status is [600-606] reason for error is in resp.error
-    #TODO: parse resp.raw_response (could use beautifulsoup)
-        #Extract all urls
-        #This also might be the area to get all the info for our report
-    if resp.status == 200:
-        soup = BeautifulSoup(resp.raw_response.content,'html.parser')
-        for link in soup.find_all('a'):
-            print(link.get('href'))
+def scraper(url, resp):
+    print("Initializing scapper.")
+    links = extract_next_links(url, resp)
+    print([link for link in links if is_valid(link)])
+    #Commented line below for testing purposes
+    #return [link for link in links if is_valid(link)]
     return list()
 
+def extract_next_links(url, resp):
+    links_list = []
+    print("Extracting links from",url)
+    # Implementation requred.
+    #TODO: Check resp.status codes
+    if resp.status == 200:
+        #parse resp.raw_response (could use beautifulsoup)
+        soup = BeautifulSoup(resp.raw_response.content,'html.parser')
+        #Extract all urls
+        #This also might be the area to get all the info for our report
+        for link in soup.find_all('a'):
+            links_list.append(link.get('href'))
+            #print(link.get('href'))
+    else:
+        #If resp.status is between [200-599] response is in resp.raw_response
+        #If resp.status is [600-606] reason for error is in resp.error
+        print(url,"returned response code:",resp.status)
+    
+        
+    
+    return links_list
+
 def is_valid(url):
+    #valid domains for the purpose of this assignment
+    valid_urls = set(["ics.uci.edu","ics.uci.edu","informatics.uci.edu","stat.uci.edu","today.uci.edu/department/information_computer_sciences"])
     try:
         parsed = urlparse(url)
+        print("netloc:",parsed.netloc)
         if parsed.scheme not in set(["http", "https"]):
             return False
-        return not re.match(
-            r".*\.(css|js|bmp|gif|jpe?g|ico"
-            + r"|png|tiff?|mid|mp2|mp3|mp4"
-            + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
-            + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
-            + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-            + r"|epub|dll|cnf|tgz|sha1"
-            + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+        #check if the url is in one of the given domain
+        for valid_url in valid_urls:
+            if valid_url in url:
+                #if the url is in given domain, return if it is a valid url or not
+                return not re.match(
+                    r".*\.(css|js|bmp|gif|jpe?g|ico"
+                    + r"|png|tiff?|mid|mp2|mp3|mp4"
+                    + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
+                    + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
+                    + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
+                    + r"|epub|dll|cnf|tgz|sha1"
+                    + r"|thmx|mso|arff|rtf|jar|csv"
+                    + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
