@@ -23,15 +23,24 @@ from bs4 import BeautifulSoup
 
 '''
 
-#
+#list of explored pages
+explored_urls = list()
 
 def scraper(url, resp):
     print("Initializing scapper.")
+
+    #if the url ends with a /, remove the / then added it to explored_urls
+    if(url[-1] == "/"):
+        explored_urls.append(url[:-1])
+    else:
+        explored_urls.append(url)
+
     links = extract_next_links(url, resp)
     print([link for link in links if is_valid(link)])
+
     #Commented line below for testing purposes
     #return [link for link in links if is_valid(link)]
-    return list()
+    return list() #TODO: return the actual list of exracted urls
 
 def extract_next_links(url, resp):
     links_list = []
@@ -60,22 +69,28 @@ def is_valid(url):
     valid_urls = set(["ics.uci.edu","ics.uci.edu","informatics.uci.edu","stat.uci.edu","today.uci.edu/department/information_computer_sciences"])
     try:
         parsed = urlparse(url)
-        print("netloc:",parsed.netloc)
+        
         if parsed.scheme not in set(["http", "https"]):
             return False
         #check if the url is in one of the given domain
         for valid_url in valid_urls:
             if valid_url in url:
-                #if the url is in given domain, return if it is a valid url or not
-                return not re.match(
-                    r".*\.(css|js|bmp|gif|jpe?g|ico"
-                    + r"|png|tiff?|mid|mp2|mp3|mp4"
-                    + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
-                    + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
-                    + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-                    + r"|epub|dll|cnf|tgz|sha1"
-                    + r"|thmx|mso|arff|rtf|jar|csv"
-                    + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+                #if the url has already been explored, it is no longer valid
+                if (url[:-1] if (url[-1] == "/") else url) in explored_urls:
+                    print("ALREADY EXPLORED", url)
+                    return False
+                else:
+                    print("CORRECT Domain:",url)
+                    #if the url is in given domain, return if it is a valid url or not
+                    return not re.match(
+                        r".*\.(css|js|bmp|gif|jpe?g|ico"
+                        + r"|png|tiff?|mid|mp2|mp3|mp4"
+                        + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
+                        + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
+                        + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
+                        + r"|epub|dll|cnf|tgz|sha1"
+                        + r"|thmx|mso|arff|rtf|jar|csv"
+                        + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
