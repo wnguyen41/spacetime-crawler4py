@@ -25,14 +25,16 @@ import pickle
 '''
 
 #TODO: change into a set, and change method if inserting
-#list of explored pages
-explored_urls = list()
+#set of explored pages
+explored_urls = set()
 
 #for question (2)
 #list to store the longest page, first element is url and second is the length
 max_page = ["", 0]
 
 #TODO: for question (1) add set for all unique urls found (use .split('#')[0] it remove fragment part)
+#set of unique urls
+found_urls = set()
 
 #TODO: add dictionary of words scrapped from sites
 #for question (3)
@@ -47,12 +49,22 @@ def scraper(url, resp):
 
     #if the url ends with a /, remove the / then added it to explored_urls
     if(url[-1] == "/"):
-        explored_urls.append(url[:-1])
+        explored_urls.add(url[:-1])
+        found_urls.add(url[:-1])
     else:
-        explored_urls.append(url)
+        explored_urls.add(url)
+        found_urls.add(url)
 
     links = extract_next_links(url, resp)
-    print([link for link in links if is_valid(link)])
+    valid_links = [link for link in links if is_valid(link)]
+
+    #add all the valid lings into found_urls
+    for link in valid_links:
+        found_urls.add(link.split('#')[0])
+
+    print("--VALID LINKS--",len(valid_links), valid_links) #may contain duplicates
+    print("--FOUND URLS--", len(found_urls), found_urls) #the set has duplicate urls removed
+    print("--EXPLORED URLS--", explored_urls)
 
     #Commented line below for testing purposes
     #return [link for link in links if is_valid(link)]
@@ -69,8 +81,8 @@ def extract_next_links(url, resp):
         #Extract all urls
         #This also might be the area to get all the info for our report
         for link in soup.find_all('a'):
-            link = (link.get('href').split('#'))[0]
-            links_list.append(link)
+            # link = link.get('href').split('#'))[0] -- undid this part because we might need fragment when visiting the site
+            links_list.append(link.get('href'))
             #print(link.get('href'))
     else:
         #If resp.status is between [200-599] response is in resp.raw_response
@@ -84,13 +96,14 @@ def extract_next_links(url, resp):
 # valid status codes are from 200-399, and 204 means no content
 def is_valid_status(resp):
     if(resp.status < 200 or resp.status >= 400 or resp.status == 204):
+        print("INVALID STATUS:",resp.status,resp.url)
         return False
     else:
         return True
 
 def is_valid(url):
     #valid domains for the purpose of this assignment
-    valid_urls = set(["ics.uci.edu","ics.uci.edu","informatics.uci.edu","stat.uci.edu","today.uci.edu/department/information_computer_sciences"])
+    valid_urls = set(["ics.uci.edu","cs.uci.edu","informatics.uci.edu","stat.uci.edu","today.uci.edu/department/information_computer_sciences"])
     try:
         parsed = urlparse(url)
         
@@ -100,6 +113,8 @@ def is_valid(url):
         for valid_url in valid_urls:
             if valid_url in url:
                 #if the url has already been explored, it is no longer valid
+                #NOTE: this method of checking urls could be replaced with string matching (something i found was fuzzywuzzy)
+                #FuzzyWuzzy has methods that calculates the similarities between two strings and returns a percentage
                 if (url[:-1] if (url[-1] == "/") else url) in explored_urls:
                     print("ALREADY EXPLORED", url)
                     return False
