@@ -1,6 +1,7 @@
 import re
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
+import pickle
 
 ''' Report Questions
 
@@ -27,11 +28,19 @@ from bs4 import BeautifulSoup
 #list of explored pages
 explored_urls = list()
 
+#for question (2)
+#list to store the longest page, first element is url and second is the length
+max_page = {"",0}
+
 #TODO: for question (1) add set for all unique urls found (use .split('#')[0] it remove fragment part)
 
 #TODO: add dictionary of words scrapped from sites
+#for question (3)
+explored_words = {} #key is the words, and the value is the number of occurrence
 
 #TODO: add dictionary to keep track of ics.uci.edu subdomains
+#for question (4)
+explored_subdomains = {} #key is the subdomain, and the value is the number of pages
 
 def scraper(url, resp):
     print("Initializing scapper.")
@@ -54,13 +63,14 @@ def extract_next_links(url, resp):
     print("Extracting links from",url)
     # Implementation requred.
     #TODO: Check resp.status codes
-    if resp.status == 200:
+    if is_valid_status(resp):
         #parse resp.raw_response (could use beautifulsoup)
         soup = BeautifulSoup(resp.raw_response.content,'html.parser')
         #Extract all urls
         #This also might be the area to get all the info for our report
         for link in soup.find_all('a'):
-            links_list.append(link.get('href'))
+            link = (link.get('href').split('#'))[0]
+            links_list.append(link)
             #print(link.get('href'))
     else:
         #If resp.status is between [200-599] response is in resp.raw_response
@@ -70,6 +80,13 @@ def extract_next_links(url, resp):
         
     
     return links_list
+
+# valid status codes are from 200-399, and 204 means no content
+def is_valid_status(resp):
+    if(resp.status < 200 or resp.status >= 400 or resp.status == 204):
+        return False
+    else:
+        return True
 
 def is_valid(url):
     #valid domains for the purpose of this assignment
