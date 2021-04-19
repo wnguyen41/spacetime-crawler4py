@@ -30,7 +30,7 @@ explored_urls = list()
 
 #for question (2)
 #list to store the longest page, first element is url and second is the length
-max_page = {"",0}
+max_page = ["", 0]
 
 #TODO: for question (1) add set for all unique urls found (use .split('#')[0] it remove fragment part)
 
