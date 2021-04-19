@@ -58,12 +58,12 @@ def scraper(url, resp):
     links = extract_next_links(url, resp)
     valid_links = [link for link in links if is_valid(link)]
 
-    #add all the valid lings into found_urls
+    # #add all the valid lings into found_urls
     for link in valid_links:
-        found_urls.add(link.split('#')[0])
+        found_urls.add(link)
 
     print("--VALID LINKS--",len(valid_links), valid_links) #may contain duplicates
-    print("--FOUND URLS--", len(found_urls), found_urls) #the set has duplicate urls removed
+    print("--TOTAL FOUND URLS--", len(found_urls), found_urls) #the total set of urls found
     print("--EXPLORED URLS--", explored_urls)
 
     #Commented line below for testing purposes
@@ -81,8 +81,8 @@ def extract_next_links(url, resp):
         #Extract all urls
         #This also might be the area to get all the info for our report
         for link in soup.find_all('a'):
-            # link = link.get('href').split('#'))[0] -- undid this part because we might need fragment when visiting the site
-            links_list.append(link.get('href'))
+            defragged_link = link.get('href').split('#')[0]
+            links_list.append(defragged_link)
             #print(link.get('href'))
     else:
         #If resp.status is between [200-599] response is in resp.raw_response
@@ -119,7 +119,7 @@ def is_valid(url):
                     print("ALREADY EXPLORED", url)
                     return False
                 else:
-                    print("CORRECT Domain:",url)
+                    # print("CORRECT Domain:",url)
                     #if the url is in given domain, return if it is a valid url or not
                     return not re.match(
                         r".*\.(css|js|bmp|gif|jpe?g|ico"
