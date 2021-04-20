@@ -151,6 +151,11 @@ def is_valid_status(resp):
     else:
         return True
 
+#TODO: implement methods that invalidated pages that are listed in crawler behavior requirements
+# Detect and avoid infinite traps
+# Detect and avoid sets of similar pages with no information
+# Detect and avoid dead URLs that return a 200 status but no data (click here to see what the different HTTP status codes mean (Links to an external site.))
+# Detect and avoid crawling very large files, especially if they have low information value
 def is_valid(url):
     #valid domains for the purpose of this assignment
     valid_urls = set(["ics.uci.edu","cs.uci.edu","informatics.uci.edu","stat.uci.edu","today.uci.edu/department/information_computer_sciences"])
