@@ -117,7 +117,7 @@ def extract_text(soup):
     stopwords = []
     stopwords = f.read().split()
     #re to extract text; can be replaced with a more powerful tokenizer
-    text = re.findall(r'[a-zA-Z0-9-.@\/:]+[a-zA-Z0-9]', soup.get_text())
+    text = re.findall(r'[a-zA-Z0-9]+[\'-.@\/:a-zA-Z0-9]+[a-zA-Z0-9]', soup.get_text())
 
     for word in text:
         word = word.lower()
