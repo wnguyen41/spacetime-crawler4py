@@ -61,10 +61,18 @@ def scraper(url, resp):
     # #add all the valid lings into found_urls
     for link in valid_links:
         found_urls.add(link)
+        
+    #sort the found_words dict
+    keys_sorted_value = sorted(found_words, key=found_words.get, reverse=True)
+    sorted_dict = {}
+    for k in keys_sorted_value:
+        sorted_dict[k] = found_words[k]
+        #print statement for the word dictionary
+        print(f"{k}: {sorted_dict[k]}")
 
-    #print statement for the word dictionary
-    for word in found_words:
-        print(f"{word}: {found_words[word]}")
+    #print statement for the word dictionary (moved printing into the sorting part above)
+    # for word in found_words:
+    #     print(f"{word}: {found_words[word]}")
 
     print(f"\nThe longest page is {longest_page[0]}: {longest_page[1]}")
     #print("--VALID LINKS--",len(valid_links), valid_links) #may contain duplicates
@@ -137,6 +145,9 @@ def is_valid_status(resp):
     if(resp.status < 200 or resp.status >= 400 or resp.status == 204):
         print("INVALID STATUS:",resp.status,resp.url)
         return False
+    elif(resp.status != 200):
+        print("VALID non-200 STATUS:",resp.status,resp.url)
+        return True
     else:
         return True
 
