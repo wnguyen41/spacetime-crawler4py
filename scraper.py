@@ -117,15 +117,11 @@ def extract_text(soup):
     stopwords = []
     stopwords = f.read().split()
     #re to extract text; can be replaced with a more powerful tokenizer
-    text = re.findall(r'[a-zA-Z0-9-.@\/:]+', soup.get_text())
+    text = re.findall(r'[a-zA-Z0-9-.@\/:]+[a-zA-Z0-9]', soup.get_text())
 
     for word in text:
         word = word.lower()
         if (word not in stopwords) and len(word) >2:
-            #my tokenizer will not delete . and : at the end of a word
-            #so I delele them here
-            if(word[-1]=='.' or word[-1]==':'):
-                word = word[:-1]
             if(found_words.get(word) != None):
                 found_words[word] += 1
             else:
