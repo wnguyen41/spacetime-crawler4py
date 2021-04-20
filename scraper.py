@@ -113,11 +113,14 @@ def extract_next_links(url, resp):
 def extract_text(soup):
     #stopwords is a file which contains all words that should be ignored
     #add stopword, if found some words should be ignored during tests
-    f = open("stopwords.txt")
+
     stopwords = []
-    stopwords = f.read().split()
+    with open('stopwords.txt') as f:
+        stopwords = f.read().split()
+    
     #re to extract text; can be replaced with a more powerful tokenizer
-    text = re.findall(r'[a-zA-Z0-9-.@\/:]+[a-zA-Z0-9]', soup.get_text())
+    #regex no accepts words with apostrophes in them
+    text = re.findall(r"[a-zA-Z0-9-.@\/:]+[a-zA-Z0-9']+", soup.get_text())
 
     for word in text:
         word = word.lower()
