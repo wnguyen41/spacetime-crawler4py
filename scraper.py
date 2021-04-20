@@ -30,7 +30,7 @@ explored_urls = set()
 
 #for question (2)
 #list to store the longest page, first element is url and second is the length
-max_page = ["", 0]
+longest_page = ["", 0]
 
 #TODO: for question (1) add set for all unique urls found (use .split('#')[0] it remove fragment part)
 #set of unique urls
@@ -38,14 +38,14 @@ found_urls = set()
 
 #TODO: add dictionary of words scrapped from sites
 #for question (3)
-explored_words = {} #key is the words, and the value is the number of occurrence
+found_words = {} #key is the words, and the value is the number of occurrence
 
 #TODO: add dictionary to keep track of ics.uci.edu subdomains
 #for question (4)
-explored_subdomains = {} #key is the subdomain, and the value is the number of pages
+found_subdomains = {} #key is the subdomain, and the value is the number of pages
 
 def scraper(url, resp):
-    print("Initializing scapper.")
+    print("\nInitializing scapper.")
 
     #if the url ends with a /, remove the / then added it to explored_urls
     if(url[-1] == "/"):
@@ -62,9 +62,14 @@ def scraper(url, resp):
     for link in valid_links:
         found_urls.add(link)
 
-    print("--VALID LINKS--",len(valid_links), valid_links) #may contain duplicates
-    print("--TOTAL FOUND URLS--", len(found_urls), found_urls) #the total set of urls found
-    print("--EXPLORED URLS--", explored_urls)
+    #print statement for the word dictionary
+    for word in found_words:
+        print(f"{word}: {found_words[word]}")
+
+    print(f"\nThe longest page is {longest_page[0]}: {longest_page[1]}")
+    #print("--VALID LINKS--",len(valid_links), valid_links) #may contain duplicates
+    #print("--TOTAL FOUND URLS--", len(found_urls), found_urls) #the total set of urls found
+    #print("--EXPLORED URLS--", explored_urls)
 
     #Commented line below for testing purposes
     #return [link for link in links if is_valid(link)]
@@ -78,11 +83,20 @@ def extract_next_links(url, resp):
     if is_valid_status(resp):
         #parse resp.raw_response (could use beautifulsoup)
         soup = BeautifulSoup(resp.raw_response.content,'html.parser')
+
+        #for question 2, and no words are ignored here
+        if(len(soup.get_text())>longest_page[1]):
+            longest_page[0] = url
+            longest_page[1] = len(soup.get_text())
+
+        #for question 3
+        extract_text(soup)
         #Extract all urls
         #This also might be the area to get all the info for our report
         for link in soup.find_all('a'):
             defragged_link = link.get('href').split('#')[0]
             links_list.append(defragged_link)
+            #print(defragged_link)
             #print(link.get('href'))
     else:
         #If resp.status is between [200-599] response is in resp.raw_response
@@ -92,6 +106,32 @@ def extract_next_links(url, resp):
         
     
     return links_list
+
+
+## This function add words to the dict found_words
+## For question 3
+def extract_text(soup):
+    #stopwords is a file which contains all words that should be ignored
+    #add stopword, if found some words should be ignored during tests
+    f = open("stopwords.txt")
+    stopwords = []
+    stopwords = f.read().split()
+    #re to extract text; can be replaced with a more powerful tokenizer
+    text = re.findall(r'[a-zA-Z0-9-.@\/:]+', soup.get_text())
+
+    for word in text:
+        word = word.lower()
+        if (word not in stopwords) and len(word) >2:
+            #my tokenizer will not delete . and : at the end of a word
+            #so I delele them here
+            if(word[-1]=='.' or word[-1]==':'):
+                word = word[:-1]
+            if(found_words.get(word) != None):
+                found_words[word] += 1
+            else:
+                found_words[word] = 1
+            
+
 
 # valid status codes are from 200-399, and 204 means no content
 def is_valid_status(resp):
