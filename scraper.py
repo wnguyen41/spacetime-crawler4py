@@ -151,7 +151,7 @@ def is_valid_status(resp):
         return False
     elif(resp.status != 200):
         print("VALID non-200 STATUS:",resp.status,resp.url)
-        logger.info(f"{resp.url} returned valid non-200 status code: {resp.status}")
+        logger.info(f"{resp.url} returned VALID NON-200 status code: {resp.status}")
         return True
     else:
         return True
@@ -168,7 +168,7 @@ def is_valid(url):
         parsed = urlparse(url)
         
         if parsed.scheme not in set(["http", "https"]):
-            logger.warning(f"INCORRECT SCHEME: {url}")
+            logger.warning(f"INCORRECT SCHEME: {url} - parsed.scheme = {parsed.scheme}")
             return False
         #check if the url is in one of the given domain
         for valid_url in valid_urls:
@@ -192,7 +192,7 @@ def is_valid(url):
                         + r"|epub|dll|cnf|tgz|sha1"
                         + r"|thmx|mso|arff|rtf|jar|csv"
                         + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower()):
-                        logger.warning(f"INVALID PATH: {url}")
+                        logger.warning(f"INVALID PATH: {url} - parsed.path {parsed.path}")
                         return False
                     else:
                         return True
