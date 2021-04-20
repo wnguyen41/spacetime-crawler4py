@@ -2,6 +2,7 @@ import re
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import pickle
+from utils import get_logger
 
 ''' Report Questions
 
@@ -44,8 +45,12 @@ found_words = {} #key is the words, and the value is the number of occurrence
 #for question (4)
 found_subdomains = {} #key is the subdomain, and the value is the number of pages
 
+#logger for our scraper
+logger = get_logger("SCRAPER")
+
 def scraper(url, resp):
     print("\nInitializing scapper.")
+    logger.info(f"Scraping {url}")
 
     #if the url ends with a /, remove the / then added it to explored_urls
     if(url[-1] == "/"):
@@ -76,8 +81,11 @@ def scraper(url, resp):
 
     print(f"\nThe longest page is {longest_page[0]}: {longest_page[1]}")
     #print("--VALID LINKS--",len(valid_links), valid_links) #may contain duplicates
+    logger.info(f"{len(set(valid_links))} valid links found")
     #print("--TOTAL FOUND URLS--", len(found_urls), found_urls) #the total set of urls found
+    logger.info(f"total of {len(found_urls)} urls found")
     #print("--EXPLORED URLS--", explored_urls)
+    logger.info(f"{len(explored_urls)} urls explored")
 
     #Commented line below for testing purposes
     #return [link for link in links if is_valid(link)]
@@ -103,15 +111,10 @@ def extract_next_links(url, resp):
         #This also might be the area to get all the info for our report
         for link in soup.find_all('a'):
             defragged_link = link.get('href').split('#')[0]
-            links_list.append(defragged_link)
+            if defragged_link:
+                links_list.append(defragged_link)
             #print(defragged_link)
             #print(link.get('href'))
-    else:
-        #If resp.status is between [200-599] response is in resp.raw_response
-        #If resp.status is [600-606] reason for error is in resp.error
-        print(url,"returned response code:",resp.status)
-    
-        
     
     return links_list
 
@@ -144,9 +147,11 @@ def extract_text(soup):
 def is_valid_status(resp):
     if(resp.status < 200 or resp.status >= 400 or resp.status == 204):
         print("INVALID STATUS:",resp.status,resp.url)
+        logger.warning(f"{resp.url} returned INVALID status code: {resp.status}")
         return False
     elif(resp.status != 200):
         print("VALID non-200 STATUS:",resp.status,resp.url)
+        logger.info(f"{resp.url} returned valid non-200 status code: {resp.status}")
         return True
     else:
         return True
@@ -163,6 +168,7 @@ def is_valid(url):
         parsed = urlparse(url)
         
         if parsed.scheme not in set(["http", "https"]):
+            logger.warning(f"INCORRECT SCHEME: {url}")
             return False
         #check if the url is in one of the given domain
         for valid_url in valid_urls:
@@ -172,11 +178,12 @@ def is_valid(url):
                 #FuzzyWuzzy has methods that calculates the similarities between two strings and returns a percentage
                 if (url[:-1] if (url[-1] == "/") else url) in explored_urls:
                     print("ALREADY EXPLORED", url)
+                    logger.info(f"ALREADY EXPLORED: {url}")
                     return False
                 else:
                     # print("CORRECT Domain:",url)
                     #if the url is in given domain, return if it is a valid url or not
-                    return not re.match(
+                    if re.match(
                         r".*\.(css|js|bmp|gif|jpe?g|ico"
                         + r"|png|tiff?|mid|mp2|mp3|mp4"
                         + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
@@ -184,8 +191,22 @@ def is_valid(url):
                         + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
                         + r"|epub|dll|cnf|tgz|sha1"
                         + r"|thmx|mso|arff|rtf|jar|csv"
-                        + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+                        + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower()):
+                        logger.warning(f"INVALID PATH: {url}")
+                        return False
+                    else:
+                        return True
+                    # return not re.match(
+                    #     r".*\.(css|js|bmp|gif|jpe?g|ico"
+                    #     + r"|png|tiff?|mid|mp2|mp3|mp4"
+                    #     + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
+                    #     + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
+                    #     + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
+                    #     + r"|epub|dll|cnf|tgz|sha1"
+                    #     + r"|thmx|mso|arff|rtf|jar|csv"
+                    #     + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
+        logger.error(f"TypeError for {parsed}")
         raise
