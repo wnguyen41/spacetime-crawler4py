@@ -47,6 +47,7 @@ found_subdomains = {} #key is the subdomain, and the value is the number of page
 
 #logger for our scraper
 logger = get_logger("SCRAPER")
+processing_logger = get_logger("PROCESSING")
 
 def scraper(url, resp):
     print("\nInitializing scapper.")
@@ -62,8 +63,7 @@ def scraper(url, resp):
 
     links = extract_next_links(url, resp)
     #process the links without schemes
-    processed_links = process_links(url,links)
-    valid_links = [link for link in processed_links if is_valid(link)]
+    valid_links = [link for link in links if is_valid(link)]
 
     # #add all the valid lings into found_urls
     for link in valid_links:
@@ -91,7 +91,9 @@ def scraper(url, resp):
 
     #Commented line below for testing purposes
     #return [link for link in links if is_valid(link)]
-    return list() #TODO: return the actual list of exracted urls
+    set_valid_links = set(valid_links) # this is to remove duplicate valid_links extracted from the url
+    #turn it back into a list
+    return list(set_valid_links) #TODO: return the actual list of exracted urls
 
 def extract_next_links(url, resp):
     links_list = []
@@ -112,11 +114,14 @@ def extract_next_links(url, resp):
         #Extract all urls
         #This also might be the area to get all the info for our report
         for link in soup.find_all('a'):
-            defragged_link = link.get('href').split('#')[0]
-            if defragged_link:
-                links_list.append(defragged_link)
+            if link.get('href'):
+                defragged_link = link.get('href').split('#')[0]
+                if defragged_link:
+                    links_list.append(defragged_link)
             #print(defragged_link)
             #print(link.get('href'))
+        #completed extraction of links now we process them
+        return process_links(url,links_list)
     
     return links_list
 
@@ -124,16 +129,16 @@ def extract_next_links(url, resp):
 #links that start with 1 slash need the domain concatenated
 #links with 2 slashes can have https: added to the front
 def process_links(url: str, links: list) -> list:
-    logger.info("Processing extracted links")
+    processing_logger.info(f"Processing extracted links from {url}")
     new_list = list()
     for link in links:
         if link[:2] == "//":
             https_link = "https:" + link
-            logger.info(f"ADDING HTTPS: {link} => {https_link}")
+            processing_logger.info(f"ADDING HTTPS: {link} => {https_link}")
             new_list.append(https_link)
         elif link[:1] == "/":
             url_link = url + link
-            logger.info(f"ADDING DOMAIN {link} => {url_link}")
+            processing_logger.info(f"ADDING DOMAIN {link} => {url_link}")
             new_list.append(url_link)
         else:
             new_list.append(link)
@@ -168,11 +173,11 @@ def extract_text(soup):
 def is_valid_status(resp):
     if(resp.status < 200 or resp.status >= 400 or resp.status == 204):
         print("INVALID STATUS:",resp.status,resp.url)
-        logger.warning(f"{resp.url} returned INVALID status code: {resp.status}")
+        logger.warning(f"INVALID STATUS: <{resp.status}> from {resp.url}")
         return False
     elif(resp.status != 200):
         print("VALID non-200 STATUS:",resp.status,resp.url)
-        logger.info(f"{resp.url} returned VALID NON-200 status code: {resp.status}")
+        logger.info(f"NON-200 STATUS <{resp.status}> from {resp.url}")
         return True
     else:
         return True
