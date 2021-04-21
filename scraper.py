@@ -61,7 +61,9 @@ def scraper(url, resp):
         found_urls.add(url)
 
     links = extract_next_links(url, resp)
-    valid_links = [link for link in links if is_valid(link)]
+    #process the links without schemes
+    processed_links = process_links(url,links)
+    valid_links = [link for link in processed_links if is_valid(link)]
 
     # #add all the valid lings into found_urls
     for link in valid_links:
@@ -117,6 +119,25 @@ def extract_next_links(url, resp):
             #print(link.get('href'))
     
     return links_list
+
+#process links that have no schemes.
+#links that start with 1 slash need the domain concatenated
+#links with 2 slashes can have https: added to the front
+def process_links(url: str, links: list) -> list:
+    logger.info("Processing extracted links")
+    new_list = list()
+    for link in links:
+        if link[:2] == "//":
+            https_link = "https:" + link
+            logger.info(f"ADDING HTTPS: {link} => {https_link}")
+            new_list.append(https_link)
+        elif link[:1] == "/":
+            url_link = url + link
+            logger.info(f"ADDING DOMAIN {link} => {url_link}")
+            new_list.append(url_link)
+        else:
+            new_list.append(link)
+    return new_list
 
 
 ## This function add words to the dict found_words
