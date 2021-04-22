@@ -44,6 +44,8 @@ found_words = {} #key is the words, and the value is the number of occurrence
 #TODO: add dictionary to keep track of ics.uci.edu subdomains
 #for question (4)
 found_subdomains = {} #key is the subdomain, and the value is the number of pages
+#for question (4) for uniqueness
+link_uniqueness = ()
 
 #logger for our scraper
 logger = get_logger("SCRAPER")
@@ -82,24 +84,27 @@ def scraper(url, resp):
     #     print(f"{word}: {found_words[word]}")
 
 
-    ##for Problem#4 !!!Currently doesn't check for unique pages!!!
+    ##for Problem#4
+    for link in valid_links: #iterating through valid links to check for subdomains
     #Checking only in the ICS domain
-    split_url = url.split(".",3)
-    if (split_url[1] == "ics"):
-        #splitting url for subdomain comparison
-        currentSubdomain = split_url[0] + ".ics.uci.edu"
-        # Checking if the subdomain is new or not, and incrementing it accordingly
-        if (split_url[0] != "https://www"): #checing if it is, in fact, a subdomain
-            if (found_subdomains.get(currentSubdomain) == None):
-                found_subdomains[currentSubdomain] = 1
-            else:
-                found_subdomains[currentSubdomain] += 1
-        # Sorting the found subdomains by alphabetical order, and setting their keys to the value found
-        sorted_subdomains = {}
-        sorted_subdomains = sorted(found_subdomains.items(), key=lambda x: x[0], reverse=False)
-        for subdomain in sorted_subdomains:
-            #printing out in format "https://www.stat.uci.edu , 1"
-            print(subdomain[0],",", subdomain[1])
+        split_link = link.split(".",3)
+        if !(split_link[2] in link_uniqeness): #checking for uniqueness
+            link_uniqueness.add(split_link[2]) #adding in links to the list
+            if (split_link[1] == "ics"):
+    #splitting url for subdomain comparison
+                currentSubdomain = split_link[0] + ".ics.uci.edu"
+    # Checking if the subdomain is new or not, and incrementing it accordingly
+                if (split_link[0] != "https://www" and split_link[0] != "http://www"): #checing if it is, in fact, a subdomain
+                    if (found_subdomains.get(currentSubdomain) == None):
+                        found_subdomains[currentSubdomain] = 1
+                    else:
+                        found_subdomains[currentSubdomain] += 1
+    # Sorting the found subdomains by alphabetical order, and setting their keys to the value found
+    sorted_subdomains = {}
+    sorted_subdomains = sorted(found_subdomains.items(), key=lambda x: x[0], reverse=False)
+    for subdomain in sorted_subdomains:
+        #printing out in format "https://www.stat.uci.edu , 1"
+        print(subdomain[0],",", subdomain[1])
 
 
     print(f"\nThe longest page is {longest_page[0]}: {longest_page[1]}")
