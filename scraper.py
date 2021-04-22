@@ -6,20 +6,20 @@ from utils import get_logger
 
 ''' Report Questions
 
-    1) How many unique pages did you find? Uniqueness for the purposes of this assignment 
-        is ONLY established by the URL, but discarding the fragment part. So, for example, 
-        http://www.ics.uci.edu#aaa and http://www.ics.uci.edu#bbb are the same URL. Even if 
-        you implement additional methods for textual similarity detection, please keep considering 
+    1) How many unique pages did you find? Uniqueness for the purposes of this assignment
+        is ONLY established by the URL, but discarding the fragment part. So, for example,
+        http://www.ics.uci.edu#aaa and http://www.ics.uci.edu#bbb are the same URL. Even if
+        you implement additional methods for textual similarity detection, please keep considering
         the above definition of unique pages for the purposes of counting the unique pages in this assignment.
 
     2) What is the longest page in terms of the number of words? (HTML markup doesn’t count as words)
 
-    3) What are the 50 most common words in the entire set of pages crawled under these domains? 
-        (Ignore English stop words, which can be found, for example, here (Links to an external site.)) 
+    3) What are the 50 most common words in the entire set of pages crawled under these domains?
+        (Ignore English stop words, which can be found, for example, here (Links to an external site.))
         Submit the list of common words ordered by frequency.
-        
-    4) How many subdomains did you find in the ics.uci.edu domain? 
-        Submit the list of subdomains ordered alphabetically and the number of unique pages detected in each subdomain. 
+
+    4) How many subdomains did you find in the ics.uci.edu domain?
+        Submit the list of subdomains ordered alphabetically and the number of unique pages detected in each subdomain.
         The content of this list should be lines containing URL, number, for example:
         http://vision.ics.uci.edu, 10 (not the actual number here)
 
@@ -68,7 +68,7 @@ def scraper(url, resp):
     # #add all the valid lings into found_urls
     for link in valid_links:
         found_urls.add(link)
-        
+
     #sort the found_words dict
     keys_sorted_value = sorted(found_words, key=found_words.get, reverse=True)
     sorted_dict = {}
@@ -80,6 +80,27 @@ def scraper(url, resp):
     #print statement for the word dictionary (moved printing into the sorting part above)
     # for word in found_words:
     #     print(f"{word}: {found_words[word]}")
+
+
+    ##for Problem#4 !!!Currently doesn't check for unique pages!!!
+    #Checking only in the ICS domain
+    split_url = url.split(".",3)
+    if (split_url[1] == "ics"):
+        #splitting url for subdomain comparison
+        currentSubdomain = split_url[0] + ".ics.uci.edu"
+        # Checking if the subdomain is new or not, and incrementing it accordingly
+        if (split_url[0] != "https://www"): #checing if it is, in fact, a subdomain
+            if (found_subdomains.get(currentSubdomain) == None):
+                found_subdomains[currentSubdomain] = 1
+            else:
+                found_subdomains[currentSubdomain] += 1
+        # Sorting the found subdomains by alphabetical order, and setting their keys to the value found
+        sorted_subdomains = {}
+        sorted_subdomains = sorted(found_subdomains.items(), key=lambda x: x[0], reverse=False)
+        for subdomain in sorted_subdomains:
+            #printing out in format "https://www.stat.uci.edu , 1"
+            print(subdomain[0],",", subdomain[1])
+
 
     print(f"\nThe longest page is {longest_page[0]}: {longest_page[1]}")
     #print("--VALID LINKS--",len(valid_links), valid_links) #may contain duplicates
@@ -122,7 +143,7 @@ def extract_next_links(url, resp):
             #print(link.get('href'))
         #completed extraction of links now we process them
         return process_links(url,links_list)
-    
+
     return links_list
 
 #process links that have no schemes.
@@ -154,7 +175,7 @@ def extract_text(soup):
     stopwords = []
     with open('stopwords.txt') as f:
         stopwords = f.read().split()
-    
+
     #re to extract text; can be replaced with a more powerful tokenizer
     #regex no accepts words with apostrophes in them
     text = re.findall(r"[a-zA-Z0-9-.@\/:]+[a-zA-Z0-9']+", soup.get_text())
@@ -166,7 +187,7 @@ def extract_text(soup):
                 found_words[word] += 1
             else:
                 found_words[word] = 1
-            
+
 
 
 # valid status codes are from 200-399, and 204 means no content
@@ -192,7 +213,7 @@ def is_valid(url):
     valid_urls = set(["ics.uci.edu","cs.uci.edu","informatics.uci.edu","stat.uci.edu","today.uci.edu/department/information_computer_sciences"])
     try:
         parsed = urlparse(url)
-        
+
         if parsed.scheme not in set(["http", "https"]):
             logger.warning(f"INCORRECT SCHEME: {url} - parsed.scheme = {parsed.scheme}")
             return False
