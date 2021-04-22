@@ -25,6 +25,9 @@ from utils import get_logger
 
 '''
 
+# replace this with a flag which mark the end of the crawlling
+save_frequency = 0
+
 #TODO: change into a set, and change method if inserting
 #set of explored pages
 explored_urls = set()
@@ -50,6 +53,7 @@ logger = get_logger("SCRAPER")
 processing_logger = get_logger("PROCESSING")
 
 def scraper(url, resp):
+    global save_frequency
     print("\nInitializing scapper.")
     logger.info(f"Scraping {url}")
 
@@ -69,18 +73,10 @@ def scraper(url, resp):
     for link in valid_links:
         found_urls.add(link)
 
-    #sort the found_words dict
-    keys_sorted_value = sorted(found_words, key=found_words.get, reverse=True)
-    sorted_dict = {}
-    for k in keys_sorted_value:
-        sorted_dict[k] = found_words[k]
-        #print statement for the word dictionary
-        print(f"{k}: {sorted_dict[k]}")
-
-    #print statement for the word dictionary (moved printing into the sorting part above)
-    # for word in found_words:
-    #     print(f"{word}: {found_words[word]}")
-
+    if(save_frequency == 100):
+        save_frequency = 0
+        save_results()
+    save_frequency += 1
 
     ##for Problem#4 !!!Currently doesn't check for unique pages!!!
     #Checking only in the ICS domain
@@ -88,12 +84,14 @@ def scraper(url, resp):
     if (split_url[1] == "ics"):
         #splitting url for subdomain comparison
         currentSubdomain = split_url[0] + ".ics.uci.edu"
+
         # Checking if the subdomain is new or not, and incrementing it accordingly
-        if (split_url[0] != "https://www"): #checing if it is, in fact, a subdomain
-            if (found_subdomains.get(currentSubdomain) == None):
-                found_subdomains[currentSubdomain] = 1
-            else:
-                found_subdomains[currentSubdomain] += 1
+        # I deleted the check for https://www part, since the process function
+        # has already add https or domains to the beginning of every url
+        if (found_subdomains.get(currentSubdomain) == None):
+            found_subdomains[currentSubdomain] = 1
+        else:
+            found_subdomains[currentSubdomain] += 1
         # Sorting the found subdomains by alphabetical order, and setting their keys to the value found
         sorted_subdomains = {}
         sorted_subdomains = sorted(found_subdomains.items(), key=lambda x: x[0], reverse=False)
@@ -102,7 +100,7 @@ def scraper(url, resp):
             print(subdomain[0],",", subdomain[1])
 
 
-    print(f"\nThe longest page is {longest_page[0]}: {longest_page[1]}")
+    #print(f"\nThe longest page is {longest_page[0]}: {longest_page[1]}")
     #print("--VALID LINKS--",len(valid_links), valid_links) #may contain duplicates
     logger.info(f"{len(set(valid_links))} valid links found")
     #print("--TOTAL FOUND URLS--", len(found_urls), found_urls) #the total set of urls found
@@ -116,6 +114,7 @@ def scraper(url, resp):
     #turn it back into a list
     return list(set_valid_links) #TODO: return the actual list of exracted urls
 
+
 def extract_next_links(url, resp):
     links_list = []
     print("Extracting links from",url)
@@ -125,13 +124,9 @@ def extract_next_links(url, resp):
         #parse resp.raw_response (could use beautifulsoup)
         soup = BeautifulSoup(resp.raw_response.content,'html.parser')
 
-        #for question 2, and no words are ignored here
-        if(len(soup.get_text())>longest_page[1]):
-            longest_page[0] = url
-            longest_page[1] = len(soup.get_text())
 
         #for question 3
-        extract_text(soup)
+        extract_text(soup, url)
         #Extract all urls
         #This also might be the area to get all the info for our report
         for link in soup.find_all('a'):
@@ -168,7 +163,7 @@ def process_links(url: str, links: list) -> list:
 
 ## This function add words to the dict found_words
 ## For question 3
-def extract_text(soup):
+def extract_text(soup, url):
     #stopwords is a file which contains all words that should be ignored
     #add stopword, if found some words should be ignored during tests
 
@@ -179,6 +174,12 @@ def extract_text(soup):
     #re to extract text; can be replaced with a more powerful tokenizer
     #regex no accepts words with apostrophes in them
     text = re.findall(r'[a-zA-Z0-9][\'-.@\/:a-zA-Z0-9]+[a-zA-Z0-9]', soup.get_text())
+
+    #for question 2
+    if(len(text)>longest_page[1]):
+        longest_page[0] = url
+        longest_page[1] = len(text)
+
     for word in text:
         word = word.lower()
         if (word not in stopwords):
@@ -186,6 +187,32 @@ def extract_text(soup):
                 found_words[word] += 1
             else:
                 found_words[word] = 1
+
+
+# write results to text files
+def save_results():
+    urls_file = open("found_urls.txt", "w+")
+    words_file = open("common_words.txt", "w+")
+    longest_page_file = open("longest_page.txt", "w+")
+    domains_file = open("domains.txt", "w+")
+
+
+    urls_file.write("Total url: " + str(len(found_urls)))
+    longest_page_file.write(str(longest_page))
+
+    #sort the found_words dict
+    keys_sorted_value = sorted(found_words, key=found_words.get, reverse=True)
+    sorted_dict = {}
+    count = 0
+    for k in keys_sorted_value:
+        if(count == 50):
+            break
+        sorted_dict[k] = found_words[k]
+        words_file.write(k+ ': '+ str(sorted_dict[k]) +'\n')
+        count += 1
+
+    for word in found_subdomains:
+        domains_file.write(str(word)+': '+str(found_subdomains[word])+'\n')
 
 
 
@@ -237,7 +264,7 @@ def is_valid(url):
                         + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
                         + r"|epub|dll|cnf|tgz|sha1"
                         + r"|thmx|mso|arff|rtf|jar|csv"
-                        + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower()):
+                        + r"|rm|smil|wmv|swf|wma|zip|rar|gz|calendar)$", parsed.path.lower()):
                         logger.warning(f"INVALID PATH: {url} - parsed.path {parsed.path}")
                         return False
                     else:
