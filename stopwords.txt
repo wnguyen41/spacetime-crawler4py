@@ -172,6 +172,6 @@ down
 during
 each
 few
-m.s.
-ph.d.
-b.s.
+will
+can
+may

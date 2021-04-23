@@ -26,6 +26,19 @@ from packages.hashes.simhash import simhash
 
 '''
 
+# ignore following links while crawling. 
+# Add some if needed
+blacklist = ["https://wics.ics.uci.edu/events",  # calendar infinite loops
+        "https://archive.ics.uci.edu/ml/machine-learning-databases/00531", #low value data
+        "https://today.uci.edu/department/information_computer_sciences/calendar", #infinite loops
+        "https://www.ics.uci.edu/~agelfand/largeFam3.html", # low text infor, full of broken pics
+        "https://cbcl.ics.uci.edu/public_data/SREBP1/raw_data", # low value contents
+        "https://www.ics.uci.edu/~kay/wordlist.txt", # low value contents
+        "https://wics.ics.uci.edu",            # infinite loops
+        "https://swiki.ics.uci.edu/doku.php",  # need access
+        "https://www.ics.uci.edu/~jacobson/cs122b/Project/04-FabFlixsTestData.txt", #MYSQL txt file
+        ]
+
 # replace this with a flag which mark the end of the crawlling
 save_frequency = 0
 
@@ -76,9 +89,10 @@ def scraper(url, resp):
 
     # #add all the valid lings into found_urls
     for link in valid_links:
-        found_urls.add(link)
+        if link not in blacklist:
+            found_urls.add(link)
 
-    if(save_frequency == 100):
+    if(save_frequency == 20):
         save_frequency = 0
         save_results()
     save_frequency += 1
@@ -86,23 +100,24 @@ def scraper(url, resp):
     ##for Problem#4 !!!Currently doesn't check for unique pages!!!
     #Checking only in the ICS domain
     split_url = url.split(".",3)
-    if (split_url[1] == "ics"):
+    if (split_url[1] == "ics") and is_valid_status(resp):        ###
         #splitting url for subdomain comparison
+        if (split_url[0].startswith("https://")):
+            split_url[0] = "http://" + split_url[0][8:]
         currentSubdomain = split_url[0] + ".ics.uci.edu"
-
         # Checking if the subdomain is new or not, and incrementing it accordingly
-        # I deleted the check for https://www part, since the process function
-        # has already add https or domains to the beginning of every url
-        if (found_subdomains.get(currentSubdomain) == None):
-            found_subdomains[currentSubdomain] = 1
-        else:
-            found_subdomains[currentSubdomain] += 1
+        #checing if it is, in fact, a subdomain
+        if ("www" not in split_url[0]):                                                ###
+            if (found_subdomains.get(currentSubdomain) == None):
+                found_subdomains[currentSubdomain] = 1
+            else:
+                found_subdomains[currentSubdomain] += 1
         # Sorting the found subdomains by alphabetical order, and setting their keys to the value found
-        sorted_subdomains = {}
-        sorted_subdomains = sorted(found_subdomains.items(), key=lambda x: x[0], reverse=False)
-        for subdomain in sorted_subdomains:
-            #printing out in format "https://www.stat.uci.edu , 1"
-            print(subdomain[0],",", subdomain[1])
+            sorted_subdomains = {}
+            sorted_subdomains = sorted(found_subdomains.items(), key=lambda x: x[0], reverse=False)
+            for subdomain in sorted_subdomains:
+                #printing out in format "https://www.stat.uci.edu , 1"
+                print(subdomain[0],",", subdomain[1])
 
 
     #print(f"\nThe longest page is {longest_page[0]}: {longest_page[1]}")
@@ -142,7 +157,8 @@ def extract_next_links(url, resp):
         for link in soup.find_all('a'):
             if link.get('href'):
                 defragged_link = link.get('href').split('#')[0]
-                if defragged_link:
+                defragged_link = defragged_link.split('?')[0] #ignoring links with query
+                if (defragged_link) and len(soup.get_text())>10: #keep sites which have at least 10 words
                     links_list.append(defragged_link)
             #print(defragged_link)
             #print(link.get('href'))
@@ -275,7 +291,7 @@ def is_valid(url):
                 #NOTE: this method of checking urls could be replaced with string matching (something i found was fuzzywuzzy)
                 #FuzzyWuzzy has methods that calculates the similarities between two strings and returns a percentage
                 if (url[:-1] if (url[-1] == "/") else url) in explored_urls:
-                    print("ALREADY EXPLORED", url)
+                    #print("ALREADY EXPLORED", url)
                     logger.info(f"ALREADY EXPLORED: {url}")
                     return False
                 else:
@@ -288,9 +304,9 @@ def is_valid(url):
                         + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
                         + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
                         + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-                        + r"|epub|dll|cnf|tgz|sha1"
-                        + r"|thmx|mso|arff|rtf|jar|csv"
-                        + r"|rm|smil|wmv|swf|wma|zip|rar|gz|calendar)$", parsed.path.lower()):
+                        + r"|epub|dll|cnf|tgz|sha1|mpufal"
+                        + r"|thmx|mso|arff|rtf|jar|csv|ppxs"
+                        + r"|rm|smil|wmv|swf|wma|zip|rar|gz|calendar|wordlist)$", parsed.path.lower()):
                         logger.warning(f"INVALID PATH: {url} - parsed.path {parsed.path}")
                         return False
                     else:
