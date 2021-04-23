@@ -1,2 +1,2 @@
 All code in hashes was retrieved from https://github.com/sean-public/python-hashes.
-The hashtype.py file needed to be slightly modified to be compatible with python3.
+The simhash.py file needed to be slightly modified to be compatible with python3.
