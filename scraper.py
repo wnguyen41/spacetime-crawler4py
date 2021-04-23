@@ -173,7 +173,7 @@ def process_links(url: str, links: list) -> list:
 
 ## This function add words to the dict found_words
 ## For question 3
-# returns false if there is a nearly identical simhash that exists otherwise true 
+# returns false if there is a nearly identical simhash that exists otherwise true
 def extract_text(soup, url) -> bool:
     #stopwords is a file which contains all words that should be ignored
     #add stopword, if found some words should be ignored during tests
@@ -189,7 +189,7 @@ def extract_text(soup, url) -> bool:
     #checking current hash vs explore_urls hash
     hash = simhash(text)
     # logger.info(f"{hash} = simhash for {url}")
-    
+
     for explored_url, url_simhash in explored_urls.items():
         # logger.info(f"COMPARING SIMHASH: {hash.similarity(url_simhash)}")
         if hash.similarity(url_simhash) > 0.90:
@@ -309,3 +309,18 @@ def is_valid(url):
         print ("TypeError for ", parsed)
         logger.error(f"TypeError for {parsed}")
         raise
+
+
+def valid_content(resp):
+    soup = BeautifulSoup(resp.raw_response.content,'html.parser')
+## dumping the text into into a string
+    txt = soup.get_text()
+## parsing through the text to find all words(above 3 letters)
+    text = re.findall(r'[a-zA-Z0-9][\'-.@\/:a-zA-Z0-9]+[a-zA-Z0-9]', txt)
+## parsing through the text to find new lines
+    newline = re.findall(r'[\n]', txt)
+## comparing the number of words to new lines, if there are more than two words to a line then it passes the validity
+    if (len(text)/len(newline) > 2):
+        return True
+    return False
+    
