@@ -67,15 +67,6 @@ def scraper(url, resp):
     print("\nInitializing scapper.")
     logger.info(f"Scraping {url}")
 
-    #if the url ends with a /, remove the / then added it to explored_urls
-    # if(url[-1] == "/"):
-    #     explored_urls[url[:-1]] = 0
-    #     # explored_urls.add(url[:-1])
-    #     found_urls.add(url[:-1])
-    # else:
-    #     explored_urls[url] = 0
-    #     # explored_urls.add(url)
-    #     found_urls.add(url)
     explored_urls[url] = simhash("") #default simhash to 0
     found_urls.add(url)
 
@@ -101,6 +92,7 @@ def scraper(url, resp):
         if (split_url[0].startswith("https://")):
             split_url[0] = "http://" + split_url[0][8:]
         currentSubdomain = split_url[0] + ".ics.uci.edu"
+
         # Checking if the subdomain is new or not, and incrementing it accordingly
         #checing if it is, in fact, a subdomain
         if ("www" not in split_url[0]):                                                ###
@@ -108,7 +100,8 @@ def scraper(url, resp):
                 found_subdomains[currentSubdomain] = 1
             else:
                 found_subdomains[currentSubdomain] += 1
-        # Sorting the found subdomains by alphabetical order, and setting their keys to the value found
+                
+            # Sorting the found subdomains by alphabetical order, and setting their keys to the value found
             sorted_subdomains = {}
             sorted_subdomains = sorted(found_subdomains.items(), key=lambda x: x[0], reverse=False)
             for subdomain in sorted_subdomains:
@@ -117,15 +110,10 @@ def scraper(url, resp):
 
 
     #print(f"\nThe longest page is {longest_page[0]}: {longest_page[1]}")
-    #print("--VALID LINKS--",len(valid_links), valid_links) #may contain duplicates
     logger.info(f"{len(set(valid_links))} valid links found")
-    #print("--TOTAL FOUND URLS--", len(found_urls), found_urls) #the total set of urls found
     logger.info(f"total of {len(found_urls)} urls found")
-    #print("--EXPLORED URLS--", explored_urls)
     logger.info(f"{len(explored_urls)} urls explored")
 
-    #Commented line below for testing purposes
-    #return [link for link in links if is_valid(link)]
     set_valid_links = set(valid_links) # this is to remove duplicate valid_links extracted from the url
     #turn it back into a list
     return list(set_valid_links)
@@ -138,8 +126,12 @@ def extract_next_links(url, resp):
     if is_valid_status(resp):
         #parse resp.raw_response (could use beautifulsoup)
         soup = BeautifulSoup(resp.raw_response.content,'html.parser')
+
+        # Detect and avoid dead URLs that return a 200 status but no data (click here to see what the different HTTP status codes mean (Links to an external site.))
+        # Detect and avoid crawling very large files, especially if they have low information value
         if(len(soup.get_text()) <= 800):
             return list()
+
         #for question 3
         duplicate_flag = extract_text(soup, url)
 
@@ -148,16 +140,14 @@ def extract_next_links(url, resp):
             return list()
 
         #Extract all urls
-        #This also might be the area to get all the info for our report
         for link in soup.find_all('a'):
             if link.get('href'):
                 defragged_link = link.get('href').split('#')[0]
                 defragged_link = defragged_link.split('?')[0] #ignoring links with query
                 if (defragged_link) and len(soup.get_text())>10: #keep sites which have at least 10 words
                     links_list.append(defragged_link)
-            #print(defragged_link)
-            #print(link.get('href'))
-        #completed extraction of links now we process them
+
+        #completed extraction of links now that we've processed them
         return process_links(url,links_list)
 
     return links_list
@@ -198,11 +188,11 @@ def extract_text(soup, url) -> bool:
     text = re.findall(r'[a-zA-Z0-9][\'-.@\/:a-zA-Z0-9]+[a-zA-Z0-9]', soup.get_text())
 
     #checking current hash vs explore_urls hash
+    # Detect and avoid infinite traps
+    # Detect and avoid sets of similar pages with no information
     hash = simhash(text)
-    # logger.info(f"{hash} = simhash for {url}")
     
     for explored_url, url_simhash in explored_urls.items():
-        # logger.info(f"COMPARING SIMHASH: {hash.similarity(url_simhash)}")
         if hash.similarity(url_simhash) > 0.90:
             logger.warning(f"DUPLICATE FOUND: {url} & {explored_url}")
             return False
@@ -255,21 +245,16 @@ def save_results():
 # valid status codes are from 200-399, and 204 means no content
 def is_valid_status(resp):
     if(resp.status < 200 or resp.status >= 400 or resp.status == 204):
-        print("INVALID STATUS:",resp.status,resp.url)
+        # print("INVALID STATUS:",resp.status,resp.url)
         logger.warning(f"INVALID STATUS: <{resp.status}> from {resp.url}")
         return False
     elif(resp.status != 200):
-        print("VALID non-200 STATUS:",resp.status,resp.url)
+        # print("VALID non-200 STATUS:",resp.status,resp.url)
         logger.info(f"NON-200 STATUS <{resp.status}> from {resp.url}")
         return True
     else:
         return True
 
-#TODO: implement methods that invalidated pages that are listed in crawler behavior requirements
-# Detect and avoid infinite traps
-# Detect and avoid sets of similar pages with no information
-# Detect and avoid dead URLs that return a 200 status but no data (click here to see what the different HTTP status codes mean (Links to an external site.))
-# Detect and avoid crawling very large files, especially if they have low information value
 def is_valid(url):
     #valid domains for the purpose of this assignment
     valid_urls = set(["ics.uci.edu","cs.uci.edu","informatics.uci.edu","stat.uci.edu","today.uci.edu/department/information_computer_sciences"])
@@ -279,21 +264,14 @@ def is_valid(url):
         if parsed.scheme not in set(["http", "https"]):
             logger.warning(f"INCORRECT SCHEME: {url} - parsed.scheme = {parsed.scheme}")
             return False
-        #check if the url is in one of the given domain
+        
         for valid_url in valid_urls:
-            if valid_url in url:
-                #if the url has already been explored, it is no longer valid
-                #NOTE: this method of checking urls could be replaced with string matching (something i found was fuzzywuzzy)
-                #FuzzyWuzzy has methods that calculates the similarities between two strings and returns a percentage
-                if (url[:-1] if (url[-1] == "/") else url) in explored_urls:
-                    #print("ALREADY EXPLORED", url)
+            if valid_url in url: # check if the url is in one of the given domain
+                
+                if url in explored_urls: # check if the url has already been explored
                     logger.info(f"ALREADY EXPLORED: {url}")
                     return False
-                else:
-                    #checking explored urls' simhash
-                    # print("CORRECT Domain:",url)
-                    #if the url is in given domain, return if it is a valid url or not
-                    if re.match(
+                elif re.match(
                         r".*\.(css|js|bmp|gif|jpe?g|ico"
                         + r"|png|tiff?|mid|mp2|mp3|mp4"
                         + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
@@ -302,19 +280,11 @@ def is_valid(url):
                         + r"|epub|dll|cnf|tgz|sha1|mpufal"
                         + r"|thmx|mso|arff|rtf|jar|csv|ppxs"
                         + r"|rm|smil|wmv|swf|wma|zip|rar|gz|calendar|wordlist)$", parsed.path.lower()):
-                        logger.warning(f"INVALID PATH: {url} - parsed.path {parsed.path}")
-                        return False
-                    else:
-                        return True
-                    # return not re.match(
-                    #     r".*\.(css|js|bmp|gif|jpe?g|ico"
-                    #     + r"|png|tiff?|mid|mp2|mp3|mp4"
-                    #     + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
-                    #     + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
-                    #     + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-                    #     + r"|epub|dll|cnf|tgz|sha1"
-                    #     + r"|thmx|mso|arff|rtf|jar|csv"
-                    #     + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+                    # checking if the url has a valid path
+                    logger.warning(f"INVALID PATH: {url} - parsed.path {parsed.path}")
+                    return False
+                else:
+                    return True
 
     except TypeError:
         print ("TypeError for ", parsed)
