@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import pickle
 from utils import get_logger
-from hashes.simhash import simhash
+from packages.hashes.simhash import simhash
 
 ''' Report Questions
 
