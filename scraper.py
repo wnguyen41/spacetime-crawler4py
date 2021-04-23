@@ -45,7 +45,7 @@ found_words = {} #key is the words, and the value is the number of occurrence
 #for question (4)
 found_subdomains = {} #key is the subdomain, and the value is the number of pages
 #for question (4) for uniqueness
-link_uniqueness = set()
+#link_uniqueness = []
 
 #logger for our scraper
 logger = get_logger("SCRAPER")
@@ -88,6 +88,8 @@ def scraper(url, resp):
     for link in valid_links: #iterating through valid links to check for subdomains
     #Checking only in the ICS domain
         split_link = link.split(".",3)
+        #if (split_link[2] not in link_uniqueness): #checking for uniqueness
+        #    link_uniqueness.append(split_link[2]) #adding in links to the list
         if (split_link[1] == "ics"):
     #splitting url for subdomain comparison
             currentSubdomain = split_link[0] + ".ics.uci.edu"
