@@ -86,13 +86,14 @@ def scraper(url, resp):
 
     ##for Problem#4
     for link in valid_links: #iterating through valid links to check for subdomains
-    #Checking only in the ICS domain
+    #splitting url for subdomain comparison
         split_link = link.split(".",3)
         #if (split_link[2] not in link_uniqueness): #checking for uniqueness
         #    link_uniqueness.append(split_link[2]) #adding in links to the list
+    #Checking only in the ICS domain
         if (split_link[1] == "ics"):
-    #splitting url for subdomain comparison
-            currentSubdomain = split_link[0] + ".ics.uci.edu"
+    # Making https & http irrelevant
+            currentSubdomain = "http:" + split_link[0].split(":",1)[1] + ".ics.uci.edu"
     # Checking if the subdomain is new or not, and incrementing it accordingly
             if (split_link[0] != "https://www" and split_link[0] != "http://www"): #checing if it is, in fact, a subdomain
                 if (found_subdomains.get(currentSubdomain) == None):
