@@ -1,4 +1,5 @@
 import re
+import os
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import pickle
@@ -40,7 +41,7 @@ blacklist = ["https://wics.ics.uci.edu/events",  # calendar infinite loops
         ]
 
 # replace this with a flag which mark the end of the crawlling
-save_frequency = 0
+write_frequency = 0
 
 #set of explored pages
 explored_urls = dict() # key is the url, value is the simhash value
@@ -63,7 +64,12 @@ logger = get_logger("SCRAPER")
 processing_logger = get_logger("PROCESSING")
 
 def scraper(url, resp):
-    global save_frequency
+
+    if(len(found_urls)==0 and os.path.exists("results/FOUND_URLS.p")):
+        load_results()
+    save_results()
+
+    global write_frequency
     print("\nInitializing scapper.")
     logger.info(f"Scraping {url}")
 
@@ -79,12 +85,12 @@ def scraper(url, resp):
         if link not in blacklist:
             found_urls.add(link)
 
-    if(save_frequency == 20):
-        save_frequency = 0
-        save_results()
-    save_frequency += 1
+    if(write_frequency == 20):
+        write_frequency = 0
+        write_results()
+    write_frequency += 1
 
-    ##for Problem#4 !!!Currently doesn't check for unique pages!!!
+    ##for Problem#4 
     #Checking only in the ICS domain
     split_url = url.split(".",3)
     if (split_url[1] == "ics") and is_valid_status(resp):        ###
@@ -118,6 +124,22 @@ def scraper(url, resp):
     #turn it back into a list
     return list(set_valid_links)
 
+def save_results():
+    pickle.dump(found_urls, open("results/FOUND_URLS.p", "wb"))
+    pickle.dump(longest_page, open("results/LONGEST_PAGE.p", "wb"))
+    pickle.dump(found_words, open("results/FOUND_WORDS.p", "wb"))
+    pickle.dump(found_subdomains, open("results/FOUND_SUBDOMAINS.p", "wb"))
+    pickle.dump(explored_urls, open("results/EXPLORED_URLS.p", "wb"))
+
+
+def load_results():
+    global found_urls, longest_page, found_words, found_subdomains, explored_urls
+    found_urls = pickle.load(open("results/FOUND_URLS.p", "rb"))
+    longest_page = pickle.load(open("results/LONGEST_PAGE.p", "rb"))
+    found_words = pickle.load(open("results/FOUND_WORDS.p", "rb"))
+    found_subdomains = pickle.load(open("results/FOUND_SUBDOMAINS.p", "rb"))
+    explored_urls = pickle.load(open("results/EXPLORED_URLS.p", "rb"))
+
 
 def extract_next_links(url, resp):
     links_list = []
@@ -129,8 +151,6 @@ def extract_next_links(url, resp):
 
         # Detect and avoid dead URLs that return a 200 status but no data (click here to see what the different HTTP status codes mean (Links to an external site.))
         # Detect and avoid crawling very large files, especially if they have low information value
-        if(len(soup.get_text()) <= 800):
-            return list()
 
         #for question 3
         duplicate_flag = extract_text(soup, url)
@@ -144,7 +164,7 @@ def extract_next_links(url, resp):
             if link.get('href'):
                 defragged_link = link.get('href').split('#')[0]
                 defragged_link = defragged_link.split('?')[0] #ignoring links with query
-                if (defragged_link) and len(soup.get_text())>10: #keep sites which have at least 10 words
+                if (defragged_link) and len(soup.get_text()) > 800: #keep sites which have at least 800 words
                     links_list.append(defragged_link)
 
         #completed extraction of links now that we've processed them
@@ -216,7 +236,7 @@ def extract_text(soup, url) -> bool:
 
 
 # write results to text files
-def save_results():
+def write_results():
     urls_file = open("found_urls.txt", "w+")
     words_file = open("common_words.txt", "w+")
     longest_page_file = open("longest_page.txt", "w+")
