@@ -293,7 +293,7 @@ def is_valid(url):
                         + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
                         + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
                         + r"|epub|dll|cnf|tgz|sha1|mpufal"
-                        + r"|thmx|mso|arff|rtf|jar|csv|ppxs"
+                        + r"|thmx|mso|arff|rtf|jar|csv|ppxs|ppsx"
                         + r"|rm|smil|wmv|swf|wma|zip|rar|gz|calendar|wordlist)$", parsed.path.lower()):
                     # checking if the url has a valid path
                     logger.warning(f"INVALID PATH: {url} - parsed.path {parsed.path}")
