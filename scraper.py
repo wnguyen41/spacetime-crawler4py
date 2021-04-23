@@ -41,7 +41,7 @@ blacklist = ["https://wics.ics.uci.edu/events",  # calendar infinite loops
         ]
 
 # replace this with a flag which mark the end of the crawlling
-write_frequency = 0
+write_frequency = 100
 
 #set of explored pages
 explored_urls = dict() # key is the url, value is the simhash value
@@ -64,12 +64,11 @@ logger = get_logger("SCRAPER")
 processing_logger = get_logger("PROCESSING")
 
 def scraper(url, resp):
-
+    global write_frequency
     if(len(found_urls)==0 and os.path.exists("results/FOUND_URLS.p")):
         load_results()
     save_results()
 
-    global write_frequency
     print("\nInitializing scapper.")
     logger.info(f"Scraping {url}")
 
@@ -85,10 +84,10 @@ def scraper(url, resp):
         if link not in blacklist:
             found_urls.add(link)
 
-    if(write_frequency == 20):
-        write_frequency = 0
+    if(write_frequency == 0) and (len(explored_urls)==len(found_urls)):
+        write_frequency = 100
         write_results()
-    write_frequency += 1
+    write_frequency -= 1
 
     ##for Problem#4 
     #Checking only in the ICS domain
@@ -106,14 +105,6 @@ def scraper(url, resp):
                 found_subdomains[currentSubdomain] = 1
             else:
                 found_subdomains[currentSubdomain] += 1
-                
-            # Sorting the found subdomains by alphabetical order, and setting their keys to the value found
-            sorted_subdomains = {}
-            sorted_subdomains = sorted(found_subdomains.items(), key=lambda x: x[0], reverse=False)
-            for subdomain in sorted_subdomains:
-                #printing out in format "https://www.stat.uci.edu , 1"
-                print(subdomain[0],",", subdomain[1])
-
 
     #print(f"\nThe longest page is {longest_page[0]}: {longest_page[1]}")
     logger.info(f"{len(set(valid_links))} valid links found")
@@ -257,8 +248,12 @@ def write_results():
         words_file.write(k+ ': '+ str(sorted_dict[k]) +'\n')
         count += 1
 
-    for word in found_subdomains:
-        domains_file.write(str(word)+': '+str(found_subdomains[word])+'\n')
+    # Sorting the found subdomains by alphabetical order, and setting their keys to the value found
+    sorted_subdomains = {}
+    sorted_subdomains = sorted(found_subdomains.items(), key=lambda x: x[0], reverse=False)
+    for subdomain in sorted_subdomains:
+        #printing out in format "https://www.stat.uci.edu: 1"
+        domains_file.write(subdomain[0]+': '+str(subdomain[1])+'\n')
 
 
 
