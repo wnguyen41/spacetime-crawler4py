@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import pickle
 from utils import get_logger
+from hashes.simhash import simhash
 
 ''' Report Questions
 
@@ -30,7 +31,7 @@ save_frequency = 0
 
 #TODO: change into a set, and change method if inserting
 #set of explored pages
-explored_urls = set()
+explored_urls = dict() # key is the url, value is the simhash value
 
 #for question (2)
 #list to store the longest page, first element is url and second is the length
@@ -58,12 +59,16 @@ def scraper(url, resp):
     logger.info(f"Scraping {url}")
 
     #if the url ends with a /, remove the / then added it to explored_urls
-    if(url[-1] == "/"):
-        explored_urls.add(url[:-1])
-        found_urls.add(url[:-1])
-    else:
-        explored_urls.add(url)
-        found_urls.add(url)
+    # if(url[-1] == "/"):
+    #     explored_urls[url[:-1]] = 0
+    #     # explored_urls.add(url[:-1])
+    #     found_urls.add(url[:-1])
+    # else:
+    #     explored_urls[url] = 0
+    #     # explored_urls.add(url)
+    #     found_urls.add(url)
+    explored_urls[url] = simhash("") #default simhash to 0
+    found_urls.add(url)
 
     links = extract_next_links(url, resp)
     #process the links without schemes
@@ -118,7 +123,7 @@ def scraper(url, resp):
 def extract_next_links(url, resp):
     links_list = []
     print("Extracting links from",url)
-    # Implementation requred.
+
     #TODO: Check resp.status codes
     if is_valid_status(resp):
         #parse resp.raw_response (could use beautifulsoup)
@@ -126,7 +131,12 @@ def extract_next_links(url, resp):
 
 
         #for question 3
-        extract_text(soup, url)
+        duplicate_flag = extract_text(soup, url)
+
+        #if a duplicate was detected we don't extract links
+        if not duplicate_flag:
+            return list()
+
         #Extract all urls
         #This also might be the area to get all the info for our report
         for link in soup.find_all('a'):
@@ -163,7 +173,8 @@ def process_links(url: str, links: list) -> list:
 
 ## This function add words to the dict found_words
 ## For question 3
-def extract_text(soup, url):
+# returns false if there is a nearly identical simhash that exists otherwise true 
+def extract_text(soup, url) -> bool:
     #stopwords is a file which contains all words that should be ignored
     #add stopword, if found some words should be ignored during tests
 
@@ -174,6 +185,18 @@ def extract_text(soup, url):
     #re to extract text; can be replaced with a more powerful tokenizer
     #regex no accepts words with apostrophes in them
     text = re.findall(r'[a-zA-Z0-9][\'-.@\/:a-zA-Z0-9]+[a-zA-Z0-9]', soup.get_text())
+
+    #checking current hash vs explore_urls hash
+    hash = simhash(text)
+    # logger.info(f"{hash} = simhash for {url}")
+    
+    for explored_url, url_simhash in explored_urls.items():
+        # logger.info(f"COMPARING SIMHASH: {hash.similarity(url_simhash)}")
+        if hash.similarity(url_simhash) > 0.90:
+            logger.warning(f"DUPLICATE FOUND: {url} & {explored_url}")
+            return False
+
+    explored_urls[url] = simhash(text)
 
     #for question 2
     if(len(text)>longest_page[1]):
@@ -187,6 +210,8 @@ def extract_text(soup, url):
                 found_words[word] += 1
             else:
                 found_words[word] = 1
+
+    return True
 
 
 # write results to text files
@@ -254,6 +279,7 @@ def is_valid(url):
                     logger.info(f"ALREADY EXPLORED: {url}")
                     return False
                 else:
+                    #checking explored urls' simhash
                     # print("CORRECT Domain:",url)
                     #if the url is in given domain, return if it is a valid url or not
                     if re.match(
