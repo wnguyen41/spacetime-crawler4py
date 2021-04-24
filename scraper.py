@@ -38,6 +38,7 @@ blacklist = ["https://wics.ics.uci.edu/events",  # calendar infinite loops
         "https://wics.ics.uci.edu",            # infinite loops
         "https://swiki.ics.uci.edu/doku.php",  # need access
         "https://www.ics.uci.edu/~jacobson/cs122b/Project/04-FabFlixsTestData.txt", #MYSQL txt file
+        "http://www.ics.uci.edu/IRUS/research" # redirects to http://isr.uci.edu/research (crawler doesn't handle redirections)
         ]
 
 # replace this with a flag which mark the end of the crawlling
