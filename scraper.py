@@ -38,8 +38,10 @@ blacklist = ["https://wics.ics.uci.edu/events",  # calendar infinite loops
         "https://wics.ics.uci.edu",            # infinite loops
         "https://swiki.ics.uci.edu/doku.php",  # need access
         "https://www.ics.uci.edu/~jacobson/cs122b/Project/04-FabFlixsTestData.txt", #MYSQL txt file
-        "https://www.ics.uci.edu/~wjohnson/BIDA/Ch8/posterioriterates.txt"  #useless information about ids and posteriors
-        ]
+        "https://www.ics.uci.edu/~wjohnson/BIDA/Ch8/posterioriterates.txt",  #useless information about ids and posteriors
+        "https://evoke.ics.uci.edu/qs-personal-data-landscapes-poster"   #infinite loops
+        ] 
+
 
 # replace this with a flag which mark the end of the crawlling
 write_frequency = 100
@@ -93,7 +95,7 @@ def scraper(url, resp):
     ##for Problem#4 
     #Checking only in the ICS domain
     split_url = url.split(".",3)
-    if (split_url[1] == "ics") and is_valid_status(resp):        ###
+    if (split_url[1] == "ics") and is_valid_status(resp):  
         #splitting url for subdomain comparison
         if (split_url[0].startswith("https://")):
             split_url[0] = "http://" + split_url[0][8:]
@@ -101,13 +103,13 @@ def scraper(url, resp):
 
         # Checking if the subdomain is new or not, and incrementing it accordingly
         #checing if it is, in fact, a subdomain
-        if ("www" not in split_url[0]):                                                ###
+        if ("www" not in split_url[0]):                  
             if (found_subdomains.get(currentSubdomain) == None):
                 found_subdomains[currentSubdomain] = 1
             else:
                 found_subdomains[currentSubdomain] += 1
 
-    #print(f"\nThe longest page is {longest_page[0]}: {longest_page[1]}")
+    print(f"\nThe longest page is {longest_page[0]}: {longest_page[1]}")
     logger.info(f"{len(set(valid_links))} valid links found")
     logger.info(f"total of {len(found_urls)} urls found")
     logger.info(f"{len(explored_urls)} urls explored")
