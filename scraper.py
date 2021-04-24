@@ -84,7 +84,7 @@ def scraper(url, resp):
         if link not in blacklist:
             found_urls.add(link)
 
-    if(write_frequency == 0) and (len(explored_urls)==len(found_urls)):
+    if(write_frequency == 0) or (len(explored_urls)==len(found_urls)):
         write_frequency = 100
         write_results()
     write_frequency -= 1
