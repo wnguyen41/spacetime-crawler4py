@@ -38,8 +38,10 @@ blacklist = ["https://wics.ics.uci.edu/events",  # calendar infinite loops
         "https://wics.ics.uci.edu",            # infinite loops
         "https://swiki.ics.uci.edu/doku.php",  # need access
         "https://www.ics.uci.edu/~jacobson/cs122b/Project/04-FabFlixsTestData.txt", #MYSQL txt file
+        "https://www.ics.uci.edu/~wjohnson/BIDA/Ch8/posterioriterates.txt",  #useless information about ids and posteriors
+        "https://evoke.ics.uci.edu/qs-personal-data-landscapes-poster",   #infinite loops
         "http://www.ics.uci.edu/IRUS/research" # redirects to http://isr.uci.edu/research (crawler doesn't handle redirections)
-        ]
+        ] 
 
 # replace this with a flag which mark the end of the crawlling
 write_frequency = 100
@@ -65,6 +67,8 @@ logger = get_logger("SCRAPER")
 processing_logger = get_logger("PROCESSING")
 
 def scraper(url, resp):
+    if url in blacklist:
+        return list()
     global write_frequency
     if(len(found_urls)==0 and os.path.exists("results/FOUND_URLS.p")):
         load_results()
@@ -74,16 +78,14 @@ def scraper(url, resp):
     logger.info(f"Scraping {url}")
 
     explored_urls[url] = simhash("") #default simhash to 0
-    found_urls.add(url)
 
     links = extract_next_links(url, resp)
     #process the links without schemes
-    valid_links = [link for link in links if is_valid(link)]
+    valid_links = [link for link in links if (is_valid(link) and link not in found_urls)]
 
     # #add all the valid lings into found_urls
     for link in valid_links:
-        if link not in blacklist:
-            found_urls.add(link)
+        found_urls.add(link)
 
     if(write_frequency <= 0) or (len(explored_urls)==len(found_urls)):
         write_frequency = 100
@@ -93,7 +95,7 @@ def scraper(url, resp):
     ##for Problem#4 
     #Checking only in the ICS domain
     split_url = url.split(".",3)
-    if (split_url[1] == "ics") and is_valid_status(resp):        ###
+    if (split_url[1] == "ics") and is_valid_status(resp):  
         #splitting url for subdomain comparison
         if (split_url[0].startswith("https://")):
             split_url[0] = "http://" + split_url[0][8:]
@@ -101,13 +103,13 @@ def scraper(url, resp):
 
         # Checking if the subdomain is new or not, and incrementing it accordingly
         #checing if it is, in fact, a subdomain
-        if ("www" not in split_url[0]):                                                ###
+        if ("www" not in split_url[0]):                  
             if (found_subdomains.get(currentSubdomain) == None):
                 found_subdomains[currentSubdomain] = 1
             else:
                 found_subdomains[currentSubdomain] += 1
 
-    #print(f"\nThe longest page is {longest_page[0]}: {longest_page[1]}")
+    print(f"\nThe longest page is {longest_page[0]}: {longest_page[1]}")
     logger.info(f"{len(set(valid_links))} valid links found")
     logger.info(f"total of {len(found_urls)} urls found")
     logger.info(f"{len(explored_urls)} urls explored")
@@ -156,8 +158,9 @@ def extract_next_links(url, resp):
             if link.get('href'):
                 defragged_link = link.get('href').split('#')[0]
                 defragged_link = defragged_link.split('?')[0] #ignoring links with query
-                if (defragged_link) and len(soup.get_text()) > 800: #keep sites which have at least 800 words
-                    links_list.append(defragged_link)
+                if (defragged_link) and len(soup.get_text()) > 800: 
+                    #keep sites which have at least 800 words
+                    links_list.append(defragged_link.lower())
 
         #completed extraction of links now that we've processed them
         return process_links(url,links_list)
@@ -294,7 +297,7 @@ def is_valid(url):
                         + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
                         + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
                         + r"|epub|dll|cnf|tgz|sha1|mpufal"
-                        + r"|thmx|mso|arff|rtf|jar|csv|ppxs|ppsx"
+                        + r"|thmx|mso|arff|rtf|jar|csv|ppsx"
                         + r"|rm|smil|wmv|swf|wma|zip|rar|gz|calendar|wordlist)$", parsed.path.lower()):
                     # checking if the url has a valid path
                     logger.warning(f"INVALID PATH: {url} - parsed.path {parsed.path}")
